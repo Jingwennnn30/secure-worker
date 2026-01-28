@@ -1,7 +1,5 @@
 # secure-worker
 Cloudflare Worker for Zero Trust protected /secure endpoint
-# secure-worker
-Cloudflare Worker for Zero Trust protected /secure endpoint
 
 
 This repository contains the Cloudflare Worker used in the Customer Solutions Engineer technical assignment.
