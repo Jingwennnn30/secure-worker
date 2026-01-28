@@ -3,21 +3,25 @@ export default {
     const url = new URL(request.url);
     const path = url.pathname;
 
+    // =========================
     // Identity headers from Cloudflare Zero Trust
+    // =========================
     const email =
       request.headers.get("Cf-Access-Authenticated-User-Email") ||
       "unknown@user";
 
     const country =
-      request.headers.get("Cf-IPCountry") || "Unknown";
+      request.headers.get("Cf-IPCountry") || "UNKNOWN";
 
     const timestamp = new Date().toISOString();
 
-    
+    // =========================
+    // /secure → HTML response
+    // =========================
     if (path === "/secure" || path === "/secure/") {
       const html = `
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <title>Secure Application Portal</title>
@@ -120,7 +124,7 @@ export default {
 <body>
   <div class="card">
 
-    <!-- Lock icon (SVG – professional, no emoji issues) -->
+    <!-- Lock Icon -->
     <svg class="logo" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
       <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
       <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
@@ -170,24 +174,22 @@ export default {
     }
 
     // =========================
-    // /secure/{COUNTRY} → Show flag from R2
+    // /secure/{COUNTRY} → Flag from private R2
     // =========================
     const parts = path.split("/").filter(Boolean);
 
     if (parts.length === 2 && parts[0] === "secure") {
       const selectedCountry = parts[1].toUpperCase();
-
-      // Map country → file in R2
-      let filename = "my.png"; // default Malaysia
-
-      if (selectedCountry === "US") filename = "us.png";
-      if (selectedCountry === "MY") filename = "my.png";
+      const filename = `${selectedCountry.toLowerCase()}.png`;
 
       try {
         const object = await env.FLAGS_BUCKET.get(filename);
 
         if (!object) {
-          return new Response("Flag not found in R2 bucket", { status: 404 });
+          return new Response(
+            `No flag available for country: ${selectedCountry}`,
+            { status: 404 }
+          );
         }
 
         return new Response(object.body, {
@@ -196,7 +198,10 @@ export default {
           },
         });
       } catch (err) {
-        return new Response("Error reading from R2 bucket", { status: 500 });
+        return new Response(
+          "Error retrieving flag from R2 storage",
+          { status: 500 }
+        );
       }
     }
 
